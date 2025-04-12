@@ -45,33 +45,34 @@ const demandMapping: Record<
  */
 export function calculateDemand(
   residents: Partial<Residents>,
-  demandsToCalculate: Partial<
-    Record<ResidentType, Record<"basic" | "luxury", Product[]>>
-  >
+  demandsToCalculate: Partial<Record<ResidentType, Product[]>>
 ): ProductAmounts {
   return Object.entries(residents).reduce(
     (overallDemand, [residentType, residentCount]) => {
-      const demands = demandMapping[residentType as ResidentType];
+      const demands = [
+        ...demandMapping[residentType as ResidentType].basic,
+        ...demandMapping[residentType as ResidentType].luxury
+      ];
 
-      (["basic", "luxury"] as const).forEach((demandType) => {
-        const residentDemands =
-          demandsToCalculate[residentType as ResidentType]?.[demandType] || [];
+      const residentDemands =
+        demandsToCalculate[residentType as ResidentType] || {};
 
-        demands[demandType].forEach((demand) => {
-          if (residentDemands.includes(demand.product)) {
-            const newAmount = roundTo(
-              (overallDemand[demand.product] || 0) +
-                demand.amount * residentCount,
-              3
-            );
+      console.log(residentType, residentDemands);
 
-            if (newAmount > 0) {
-              overallDemand[demand.product] = newAmount;
-            } else {
-              delete overallDemand[demand.product];
-            }
+      demands.forEach((demand) => {
+        if (residentDemands[demand.product]) {
+          const newAmount = roundTo(
+            (overallDemand[demand.product] || 0) +
+              demand.amount * residentCount,
+            3
+          );
+
+          if (newAmount > 0) {
+            overallDemand[demand.product] = newAmount;
+          } else {
+            delete overallDemand[demand.product];
           }
-        });
+        }
       });
 
       return overallDemand;

@@ -1,10 +1,5 @@
 import React, { useState } from "react";
 import "./App.css";
-import ResidentsSection from "./components/ResidentsSection";
-import DemandSelectionSection from "./components/DemandSelectionSection";
-import ElectricitySection from "./components/ElectricitySection";
-import AdditionalProductsSection from "./components/AdditionalProductsSection";
-import { Demand, demandData } from "./data/Demand";
 import {
   calculateDemand,
   calculateNeededProductions,
@@ -13,6 +8,12 @@ import {
   ProductionAmountList,
   Residents
 } from "./Calculator";
+import AdditionalProductsSection from "./components/AdditionalProductsSection";
+import DemandSelectionSection from "./components/DemandSelectionSection";
+import ElectricitySection from "./components/ElectricitySection";
+import ResidentsSection from "./components/ResidentsSection";
+import { Demand, demandData } from "./data/Demand";
+import { Productions, products } from "./data/Production";
 
 function App() {
   const [residents, setResidents] = useState<Partial<Residents>>({
@@ -37,16 +38,22 @@ function App() {
     return initialState;
   });
 
-  const [electricityUsage, setElectricityUsage] = useState({
-    production1: false,
-    production2: false,
-    production3: false
+  const [electricityUsage, setElectricityUsage] = useState(() => {
+    const initialState: { [key: string]: boolean } = {};
+    Productions.forEach((production) => {
+      initialState[production.name] = false;
+    });
+    return initialState;
   });
 
-  const [additionalProducts, setAdditionalProducts] = useState({
-    product1: 0,
-    product2: 0,
-    product3: 0
+  const [additionalProducts, setAdditionalProducts] = useState<{
+    [key: string]: number;
+  }>(() => {
+    const initialState: { [key: string]: number } = {};
+    products.forEach((product) => {
+      initialState[product] = 0;
+    });
+    return initialState;
   });
 
   const [calculationResult, setCalculationResult] = useState<{
@@ -79,28 +86,30 @@ function App() {
   };
 
   const handleCalculate = () => {
-    // Prepare the selected demands
-    const selectedDemands = Object.keys(demandSelection).reduce(
-      (acc, residentType) => {
-        acc[residentType] = {
-          basic: Object.keys(demandSelection[residentType]).filter(
-            (product) => demandSelection[residentType][product]
-          ),
-          luxury: []
-        };
-        return acc;
-      },
-      {} as Record<string, { basic: string[]; luxury: string[] }>
-    );
+    // Prepare residents demand
+    const residentsDemand = {};
+    Object.entries(demandSelection).forEach(([residentType, products]) => {
+      Object.entries(products).forEach(([product, selected]) => {
+        if (selected) {
+          residentsDemand[residentType] = {
+            ...residentsDemand[residentType],
+            [product]: true
+          };
+        }
+      });
+    });
 
     // Calculate demand
-    const demand = calculateDemand(residents, selectedDemands);
+    const demand = calculateDemand(residents, residentsDemand);
+    // Add additional products to demand
+    Object.entries(additionalProducts).forEach(([product, amount]) => {
+      if (amount > 0) {
+        demand[product] = (demand[product] || 0) + amount;
+      }
+    });
 
     // Calculate needed productions
-    const productions = calculateNeededProductions(
-      demand,
-      Object.keys(electricityUsage).filter((key) => electricityUsage[key])
-    );
+    const productions = calculateNeededProductions(demand);
 
     // Calculate needed workers
     const workers = calculateNeededWorker(productions);

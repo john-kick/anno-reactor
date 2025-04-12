@@ -199,9 +199,9 @@ export const DemandPerInvestor: CategorizedDemand = {
 
 // Combine all categorized demands into a single object
 export const demandData = {
-  farmer: DemandPerFarmer,
-  worker: DemandPerWorker,
-  artisan: DemandPerArtisan,
-  engineer: DemandPerEngineer,
-  investor: DemandPerInvestor
+  Farmer: DemandPerFarmer,
+  Worker: DemandPerWorker,
+  Artisan: DemandPerArtisan,
+  Engineer: DemandPerEngineer,
+  Investor: DemandPerInvestor
 };
